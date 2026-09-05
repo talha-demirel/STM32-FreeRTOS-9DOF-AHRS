@@ -2,6 +2,17 @@
 
 A real-time Attitude and Heading Reference System (AHRS) running on an STM32F4 microcontroller. It fuses a 6-axis IMU (MPU6050) and a 3-axis magnetometer (QMC5883P) with an adaptive Madgwick filter under FreeRTOS, streaming orientation (quaternion + Euler angles) plus raw sensor data over UART for visualization in a 3D viewer or logging tool.
 
+## Project Motivation & Scope
+
+This project was developed as a technical deep-dive into **real-time embedded systems, RTOS architectures, and sensor fusion algorithms**. 
+
+Rather than building a fully consumer-ready product with peripheral features (like physical buttons, displays, or runtime UI), the primary engineering focus was strictly directed toward the core flight-controller architecture:
+* Achieving a zero-blocking, DMA-driven hardware pipeline.
+* Implementing a safe and deterministic RTOS task hierarchy.
+* Solving real-world sensor fusion challenges (Hard/Soft-Iron anomalies, Gimbal Lock prevention via Quaternions).
+
+As a result, certain operational features (such as runtime calibration triggers) are currently handled via code-recompilation. These are acknowledged in the *Known Issues* section and left as future improvements, keeping the current codebase laser-focused on core AHRS stability.
+
 ## Features
 
 - **Interrupt + DMA driven sensor pipeline** — no blocking I2C reads in any task; the IMU data-ready interrupt drives a single-bus DMA scheduler shared between the accelerometer/gyroscope and the magnetometer.
@@ -19,6 +30,7 @@ A real-time Attitude and Heading Reference System (AHRS) running on an STM32F4 m
 | Magnetometer    | QMC5883P  | I2C1 (via MPU6050 bypass) | Read every 3rd IMU sample (decimated) |
 
 Both sensors share a single I2C bus; the MPU6050's I2C bypass mode exposes the magnetometer directly to the MCU. A software I2C bus-recovery routine runs at boot (bit-banged clock pulses) in case the bus was left in a stuck state by a previous reset.
+
 
 ## System Architecture
 
@@ -124,18 +136,6 @@ safety-relevant application — contributions welcome:
 - [ ] **Magnetometer Limitations:** The QMC5883P is highly sensitive to external magnetic fields (both Hard-Iron and Soft-Iron distortions). Environmental changes, such as nearby ferrous metals, breadboard clips, or electronic devices, can significantly alter the local magnetic vector. Proper and frequent calibration in the sensor's final operating environment is strictly required for accurate Yaw tracking.
 
 - [ ] **Calibration Trigger Mechanism:** The current method of forcing a re-calibration by uncommenting a code block in `main.c` and recompiling the firmware is highly inefficient for field deployments. Future revisions should implement a runtime trigger (e.g., a physical button via EXTI or a UART command parser) to initiate the calibration sequence without requiring a firmware re-flash.
-
-
-## Project Motivation & Scope
-
-This project was developed as a technical deep-dive into **real-time embedded systems, RTOS architectures, and sensor fusion algorithms**. 
-
-Rather than building a fully consumer-ready product with peripheral features (like physical buttons, displays, or runtime UI), the primary engineering focus was strictly directed toward the core flight-controller architecture:
-* Achieving a zero-blocking, DMA-driven hardware pipeline.
-* Implementing a safe and deterministic RTOS task hierarchy.
-* Solving real-world sensor fusion challenges (Hard/Soft-Iron anomalies, Gimbal Lock prevention via Quaternions).
-
-As a result, certain operational features (such as runtime calibration triggers) are currently handled via code-recompilation. These are acknowledged in the *Known Issues* section and left as future improvements, keeping the current codebase laser-focused on core AHRS stability.
 
 
 ## License
