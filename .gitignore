@@ -1,0 +1,11 @@
+Debug/
+Release/
+build/
+
+.metadata/
+.extSettings
+*.launch
+.mxproject
+
+.DS_Store
+Thumbs.db
