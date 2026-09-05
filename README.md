@@ -26,7 +26,7 @@ Four FreeRTOS tasks communicate through single-slot "overwrite" queues (each que
 
 ```text
 EXTI (MPU DRDY) ─┐
-                   ▼
+                 ▼
            ┌─────────────┐   xIMUQueue    ┌─────────────┐   xTelemetryQueue   ┌────────────────┐
  DMA ISR ─▶│  IMU_Task   │───────────────▶│  AHRS_Task  │────────────────────▶│ Telemetry_Task │──▶ UART DMA
            │ (I2C sched.)│   xMagQueue    │  (Madgwick) │                     │   (50 Hz)      │
