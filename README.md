@@ -24,6 +24,7 @@ Both sensors share a single I2C bus; the MPU6050's I2C bypass mode exposes the m
 
 Four FreeRTOS tasks communicate through single-slot "overwrite" queues (each queue always holds the latest value, so slower consumers never block producers):
 
+```text
 EXTI (MPU DRDY) ─┐
                    ▼
            ┌─────────────┐   xIMUQueue    ┌─────────────┐   xTelemetryQueue   ┌────────────────┐
@@ -39,6 +40,7 @@ EXTI (MPU DRDY) ─┐
                                         ┌─────────────────┐
                                         │  Monitor_Task   │──▶ HAL_IWDG_Refresh (only if all tasks alive)
                                         └─────────────────┘
+```
 
 - **IMU_Task** — highest-frequency task; state machine driven by task notifications from the EXTI callback (data ready) and I2C DMA completion callbacks. Owns the single I2C bus and arbitrates between IMU and magnetometer reads so they never collide.
 - **AHRS_Task** — blocks on the IMU queue (the pacing source), opportunistically drains the magnetometer queue, runs the Madgwick update, and publishes the resulting quaternion/Euler angles.
