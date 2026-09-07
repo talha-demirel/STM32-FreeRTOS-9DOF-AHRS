@@ -97,7 +97,7 @@ FreeRTOS.
    pin/peripheral configuration — **do not** hand-edit code outside the
    `USER CODE BEGIN/END` blocks, it will be overwritten on regeneration).
 2. **CubeMX Regeneration Warning:** Regenerating the code via STM32CubeMX will overwrite the FreeRTOS port files (`port.c` and `portmacro.h`). To maintain SEGGER SystemView compatibility, you must manually re-inject the `vSetVarulMaxPRIGROUPValue()` function implementation into `port.c`, and add its corresponding prototype into `portmacro.h` after each regeneration.
-3. 3. **SystemView Profiling:** SEGGER SystemView tracking is optional and disabled by default to save CPU cycles and memory. To enable real-time performance profiling, simply uncomment `#define USE_SEGGER_SYSVIEW` inside `main.h` before building.
+3. **SystemView Profiling:** SEGGER SystemView tracking is optional and disabled by default to save CPU cycles and memory. To enable real-time performance profiling, simply uncomment `#define USE_SEGGER_SYSVIEW` inside `main.h` before building.
 4. Build and flash normally (`Debug` or `Release` target).
 5. On first boot, watch the UART log (see below) — it will report gyro
    calibration, and prompt for accelerometer/magnetometer calibration if no
