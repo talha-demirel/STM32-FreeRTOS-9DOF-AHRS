@@ -61,6 +61,17 @@ EXTI (MPU DRDY) ─┐
 - **Telemetry_Task** — fixed 50 Hz `vTaskDelayUntil` loop, peeks the latest telemetry packet (never consumes it, so AHRS_Task's `xQueueOverwrite` is never blocked), formats it, and hands it to UART DMA.
 - **Monitor_Task** — highest-priority task; waits for all three "alive" bits with a bounded timeout and only refreshes the IWDG when every task has checked in, so a single hung task eventually forces a hardware reset rather than the system limping along with stale data.
 
+### Task Configuration
+
+| Task Name        | Priority | Stack Size (Words) | Stack Size (Bytes) |
+|------------------|:--------:|:------------------:|------------------:|
+| Monitor_Task     | 5 (High) | 128                | 512
+| AHRS_Task        | 4        | 1024               | 4096
+| IMU_Task         | 3        | 256                | 1024
+| Telemetry_Task   | 1 (Low)  | 512                | 2048
+
+Stack sizes are allocated in words (1 word = 4 bytes on Cortex-M4).
+
 ## Sensor Fusion Strategy
 
 ### 6-DOF / 9-DOF adaptive blending
