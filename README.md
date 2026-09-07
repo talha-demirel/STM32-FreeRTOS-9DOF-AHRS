@@ -25,9 +25,11 @@ As a result, certain operational features (such as runtime calibration triggers)
 
 | Component      | Part      | Interface | Notes                                             |
 |-----------------|-----------|-----------|----------------------------------------------------|
-| MCU             | STM32F4xx | —         | HSI + PLL clock, TIM2 free-running µs timestamp   |
+| MCU             | STM32F4xx | —         | HSI + PLL, TIM2 (µs timestamp), TIM6 (HAL timebase)|
 | IMU             | MPU6050   | I2C1      | DRDY interrupt on `INTA_Pin`, I2C bypass enabled  |
 | Magnetometer    | QMC5883P  | I2C1 (via MPU6050 bypass) | Read every 3rd IMU sample (decimated) |
+
+SysTick is strictly dedicated to the FreeRTOS scheduler, while TIM6 is reserved for the STM32 HAL timebase to prevent interrupt priority conflicts.
 
 Both sensors share a single I2C bus; the MPU6050's I2C bypass mode exposes the magnetometer directly to the MCU. A software I2C bus-recovery routine runs at boot (bit-banged clock pulses) in case the bus was left in a stuck state by a previous reset.
 
@@ -94,8 +96,10 @@ FreeRTOS.
 1. Open the project in STM32CubeIDE (or regenerate with CubeMX if you change
    pin/peripheral configuration — **do not** hand-edit code outside the
    `USER CODE BEGIN/END` blocks, it will be overwritten on regeneration).
-2. Build and flash normally (`Debug` or `Release` target).
-3. On first boot, watch the UART log (see below) — it will report gyro
+2. **CubeMX Regeneration Warning:** Regenerating the code via STM32CubeMX will overwrite the FreeRTOS port files (`port.c` and `portmacro.h`). To maintain SEGGER SystemView compatibility, you must manually re-inject the `vSetVarulMaxPRIGROUPValue()` function implementation into `port.c`, and add its corresponding prototype into `portmacro.h` after each regeneration.
+3. 3. **SystemView Profiling:** SEGGER SystemView tracking is optional and disabled by default to save CPU cycles and memory. To enable real-time performance profiling, simply uncomment `#define USE_SEGGER_SYSVIEW` inside `main.h` before building.
+4. Build and flash normally (`Debug` or `Release` target).
+5. On first boot, watch the UART log (see below) — it will report gyro
    calibration, and prompt for accelerometer/magnetometer calibration if no
    valid data is found in flash.
 
@@ -123,6 +127,13 @@ Measured with SEGGER SystemView:
 | AHRS_Task         | 5.5 %    |
 | Telemetry_Task    | 4.7 %    |
 | ISR27 / ISR23     | 2.3 % / 1.5 % |
+| ISR33 / ISR54     | < 1.0 %  |
+
+*\* **Interrupt Service Routines (ISR):** In the STM32F4 vector table, these specific exception numbers correspond to the hardware drivers running the sensor pipeline without blocking the CPU:*
+*   ***ISR23 (EXTI):*** *Handles the EXTI hardware interrupt triggered by the MPU6050's Data Ready (DRDY) pin.*
+*   ***ISR27 (DMA1 Stream 0):*** *Handles the I2C1 RX DMA transfer completion (fetching sensor data).*
+*   ***ISR33 (DMA1 Stream 6):*** *Handles the USART2 TX DMA completion (streaming telemetry).*
+*   ***ISR54 (USART2):*** *The global UART interrupt, triggered upon telemetry transmission events.*
 
 SystemView analysis confirms that the RTOS pipeline operates flawlessly. The system experiences a brief, expected buffer overflow only during the initial MCU startup and sensor calibration phase. Once the scheduler stabilizes, the tasks run with precise timing, zero starvation, and no dropped frames. The hardware DMA handles the heavy lifting, leaving the CPU mostly idle and highly responsive.
 
